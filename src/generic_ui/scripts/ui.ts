@@ -322,6 +322,8 @@ export class UserInterface implements ui_constants.UiApi {
     browserApi.on('notificationClicked', this.handleNotificationClick);
     browserApi.on('proxyDisconnected', this.proxyDisconnected);
     browserApi.on('promoIdDetected', this.setActivePromoId);
+    browserApi.on('translationsRequest', this.handleTranslationsRequest);
+    browserApi.on('globalSettingsRequest', this.handleGlobalSettingsRequest);
 
     core.getFullState()
         .then(this.updateInitialState)
@@ -524,7 +526,7 @@ export class UserInterface implements ui_constants.UiApi {
   }
 
   public parseUrlData = (url:string) : { type:social.PeerMessageType; message:string } => {
-    var match = url.match(/https:\/\/www.uproxy.org\/(request|offer)\/(.*)/)
+    var match = url.match(/https:\/\/www.uproxy.org\/(request|offer)[/#]+(.*)/)
     if (!match) {
       throw new Error('invalid URL format');
     }
@@ -587,7 +589,9 @@ export class UserInterface implements ui_constants.UiApi {
         }
       } else {
         // Old v1 invites are base64 encoded JSON
-        var token = invite.substr(invite.lastIndexOf('/') + 1);
+        var lastNonCodeCharacter = Math.max(invite.lastIndexOf('/'), invite.lastIndexOf('#'));
+        var token = invite.substr(lastNonCodeCharacter + 1);
+
         // Removes any non base64 characters that may appear, e.g. "%E2%80%8E"
         token = token.match('[A-Za-z0-9+/=_]+')[0];
         var parsedObj = JSON.parse(atob(token));
@@ -751,6 +755,18 @@ export class UserInterface implements ui_constants.UiApi {
       this.fireSignal('open-proxy-error');
       this.bringUproxyToFront();
     }
+  }
+
+  public handleTranslationsRequest = (keys :string[], callback ?:Function) => {
+    var vals :{[s :string]: string;} = {};
+    for (let key of keys) {
+      vals[key] = this.i18n_t(key);
+    }
+    this.browserApi.respond(vals, callback, 'translations');
+  }
+
+  public handleGlobalSettingsRequest = (callback ?:Function) => {
+    this.browserApi.respond(this.model.globalSettings, callback, 'globalSettings');
   }
 
   public setActivePromoId = (promoId :string) => {
