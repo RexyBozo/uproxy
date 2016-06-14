@@ -313,7 +313,6 @@ export class PeerConnectionClass implements PeerConnection<signals.Message> {
           // node-wrtc fill doesn't emit onnegotiationneeded
           // TODO only run this conditionally, when in node
           this.onNegotiationNeeded_();
-        }).then(() => {
           return this.onceConnected;
         });
   }
