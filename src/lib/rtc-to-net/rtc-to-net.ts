@@ -232,6 +232,8 @@ import ProxyConfig = require('./proxyconfig');
           this.proxyConfig,
           this.bytesReceivedFromPeer,
           this.bytesSentToPeer);
+      log.info(session);
+      log.info(channel);
       this.sessions_[channelLabel] = session;
       session.start().catch((e:Error) => {
         log.warn('session %1 failed to connect to remote endpoint: %2', [
@@ -339,14 +341,18 @@ import ProxyConfig = require('./proxyconfig');
 
     // Returns onceReady.
     public start = () : Promise<void> => {
+      log.info("START START");
       this.onceReady = this.receiveEndpointFromPeer_()
         .catch((e:Error) => {
+          log.info("ONCEREADY ERROR");
           // TODO: Add a unit test for this case.
           this.replyToPeer_(socks.Reply.UNSUPPORTED_COMMAND);
           return Promise.reject(e);
         })
         .then(this.getTcpConnection_)
         .then((tcpConnection) => {
+          log.info("HAVE A TCPCONNECTION");
+          log.info(tcpConnection);
           this.tcpConnection_ = tcpConnection;
 
           return this.tcpConnection_.onceConnected
@@ -364,6 +370,7 @@ import ProxyConfig = require('./proxyconfig');
           this.replyToPeer_(reply, info);
         });
 
+      log.info("going to call onceready");
       this.onceReady.then(this.linkSocketAndChannel_, this.fulfillStopping_);
 
       // Shutdown once the data channel terminates.
@@ -379,7 +386,8 @@ import ProxyConfig = require('./proxyconfig');
 
       this.onceStopped_ = this.onceStopping_.then(this.stopResources_);
 
-      return this.onceReady;
+      log.info("returning");
+      return this.onceReady;//.then(this.linkSocketAndChannel_, this.fulfillStopping_);
     }
 
     // Initiates shutdown of the TCP connection and peerconnection.

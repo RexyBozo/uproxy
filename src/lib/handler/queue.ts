@@ -24,6 +24,8 @@
 // formalize the relationship in comments here.
 
 import baseQueue = require('../queue/queue');
+import logging = require('../logging/logging');
+var log :logging.Log = new logging.Log('RtcToNet');
 
 // The |QueueFeeder| is the abstraction for events to be handled.
 export interface QueueFeeder<Feed,Result> {
@@ -213,6 +215,7 @@ export class Queue<Feed,Result>
   // should pause proccessing of the queue.
   private processQueue_ = () : void => {
     while (this.handler_ && this.queue_.length > 0) {
+      log.info("in the queue");
       this.stats_.queued_handled_events++;
       this.queue_.shift().handleWith(this.handler_);
     }
@@ -279,6 +282,9 @@ export class Queue<Feed,Result>
   public setNextHandler = (handler:(x:Feed) => Promise<Result>)
       : Promise<Result> => {
     return new Promise((F,R) => {
+      // Currently, following log line is called twice every 5 seconds
+      // when running simple-socks in node and trying to curl something
+      log.info("SETNEXTHANDLER PROMISE START");
       this.setHandler((x:Feed) : Promise<Result> => {
         // Note: we don't call stopHandling() within this handler because that
         // would reject the promise we're about to fulfill.

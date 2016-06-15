@@ -6,6 +6,8 @@
 
 import ipaddr = require('ipaddr.js');
 import net = require('../net/net.types');
+import logging = require('../logging/logging');
+var log :logging.Log = new logging.Log('RtcToNet');
 
 // version 5 of socks
 export var VERSION5 = 0x05;
@@ -219,6 +221,7 @@ export function interpretAuthResponse(buffer:ArrayBuffer) : Auth {
 //   +----+-----+-------+------+----------+----------+
 export function interpretRequestBuffer(buffer:ArrayBuffer)
     : Request {
+  log.info("SOCKS INTERPRETATION");
   return interpretRequest(new Uint8Array(buffer));
 }
 export function interpretRequest(byteArray:Uint8Array) : Request {

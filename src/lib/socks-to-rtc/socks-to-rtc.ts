@@ -379,6 +379,7 @@ module SocksToRtc {
     // client before rejecting.
     // TODO: Needs unit tests badly since it's mocked by several other tests.
     private doRequestHandshake_ = () : Promise<socks.Response> => {
+      log.debug("DO REQUEST HANDSHAKE!");
       return this.tcpConnection_.receiveNext()
         .then(socks.interpretRequestBuffer)
         .then((request:socks.Request) => {

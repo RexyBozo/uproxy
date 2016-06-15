@@ -384,14 +384,20 @@ export class Connection {
 
   // Receive returns a promise for exactly the next |ArrayBuffer| of data.
   public receiveNext = () : Promise<ArrayBuffer> => {
+    log.info("TCP RECEIVE NEXT");
     return new Promise((F,R) => {
+      log.info("in rn promise");
+      log.info(F);
+      
       this.dataFromSocketQueue.setSyncNextHandler(F).catch(R);
 
       this.onceClosed.then((reason:SocketCloseKind) => {
+        log.info("closing kindly");
         if (this.dataFromSocketQueue.getLength() === 0) {
           R(new Error('Receive aborted due to socket close (' + reason + ')'));
         }
       });
+      log.info("AT THE END OF RN PROMISE");
     });
   }
 
