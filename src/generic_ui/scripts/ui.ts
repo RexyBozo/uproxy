@@ -1,6 +1,6 @@
+/// <reference path='../../../../third_party/typings/browser.d.ts' />
 /// <reference path='../../../../third_party/typings/generic/jdenticon.d.ts' />
 /// <reference path='../../../../third_party/typings/generic/jsurl.d.ts' />
-/// <reference path='../../../../third_party/typings/generic/md5.d.ts' />
 /// <reference path='../../../../third_party/typings/generic/uparams.d.ts' />
 
 /**
@@ -10,6 +10,7 @@
  */
 
 import ui_constants = require('../../interfaces/ui');
+import background_ui = require('./background_ui');
 import CopyPasteState = require('./copypaste-state');
 import CoreConnector = require('./core_connector');
 import uproxy_core_api = require('../../interfaces/uproxy_core_api');
@@ -26,7 +27,7 @@ import network_options = require('../../generic/network-options');
 import model = require('./model');
 import jsurl = require('jsurl');
 import uparams = require('uparams');
-import md5 = require('md5');
+import crypto = require('crypto');
 import jdenticon = require('jdenticon');
 
 var NETWORK_OPTIONS = network_options.NETWORK_OPTIONS;
@@ -64,8 +65,9 @@ export function getImageData(userId :string, oldImageData :string,
     // The size is arbitrarily set to 100 pixels.  SVG is scalable and our CSS
     // scales the image to fit the space, so this parameter has no effect.
     // We must also replace # with %23 for Firefox support.
+    const userIdHash = crypto.createHash('md5').update(userId).digest('hex');
     return '\'data:image/svg+xml;utf8,' +
-        jdenticon.toSvg(md5(userId), 100).replace(/#/g, '%23') + '\'';
+        jdenticon.toSvg(userIdHash, 100).replace(/#/g, '%23') + '\'';
   } else if (!newImageData) {
     // This case is hit when we've already generated a jdenticon for a user
     // who doesn't have any image in uProxy core.
@@ -122,9 +124,6 @@ export class UserInterface implements ui_constants.UiApi {
   public browser :string = '';
   public availableVersion :string = null;
 
-  // Changing this causes root.ts to fire a core-signal with the new value.
-  public signalToFire :Object = null;
-
   public toastMessage :string = null;
 
   // Please note that this value is updated periodically so may not reflect current reality.
@@ -139,7 +138,8 @@ export class UserInterface implements ui_constants.UiApi {
    */
   constructor(
       public core   :CoreConnector,
-      public browserApi :BrowserAPI) {
+      public browserApi :BrowserAPI,
+      public backgroundUi: background_ui.BackgroundUi) {
     this.updateView_();
 
     var firefoxMatches = navigator.userAgent.match(/Firefox\/(\d+)/);
@@ -324,10 +324,24 @@ export class UserInterface implements ui_constants.UiApi {
     browserApi.on('promoIdDetected', this.setActivePromoId);
     browserApi.on('translationsRequest', this.handleTranslationsRequest);
     browserApi.on('globalSettingsRequest', this.handleGlobalSettingsRequest);
+    backgroundUi.registerAsFakeBackground(this.panelMessageHandler);
 
     core.getFullState()
         .then(this.updateInitialState)
         .then(this.browserApi.handlePopupLaunch);
+  }
+
+  public panelMessageHandler = (name: string, data: Object) => {
+    /*
+     * This will handle a subset of the signals for the actual background UI,
+     * we will try to handle most of the signals in the actual background
+     * though
+     */
+    switch(name) {
+      case 'logout-all':
+        this.logoutAll((<any>data).getConfirmation);
+        break;
+    }
   }
 
   public restartServer_ = (providerName :string) => {
@@ -363,11 +377,8 @@ export class UserInterface implements ui_constants.UiApi {
     });
   }
 
-  // Because of an observer (in root.ts) watching the value of
-  // signalToFire, this function simulates firing a core-signal
-  // from the background page.
   public fireSignal = (signalName :string, data ?:Object) => {
-    this.signalToFire = {name: signalName, data: data};
+    this.backgroundUi.fireSignal(signalName, data);
   }
 
   private confirmationCallbacks_ :{[index :number] :PromiseCallbacks} = {};
