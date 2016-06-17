@@ -295,7 +295,9 @@ export class Queue<Feed,Result>
         resultPromise.then(F);
         return resultPromise;
       });
+      log.info(this.handler_);
       if (this.handler_) {
+        log.info("overrode reject");
         // If |handler| has not already run, and removed itself, leave a
         // rejection function behind as well.
         this.rejectFn_ = R;
@@ -306,6 +308,8 @@ export class Queue<Feed,Result>
   // Convenience function for handling next element with an ordinary function.
   public setSyncNextHandler = (handler:(x:Feed) => Result) : Promise<Result> => {
     return this.setNextHandler((x:Feed) => {
+        log.info("SETSYNCNEXTHANDLER PROMISE INSIDE");
+        log.info(x);
         return Promise.resolve(handler(x));
       });
   }

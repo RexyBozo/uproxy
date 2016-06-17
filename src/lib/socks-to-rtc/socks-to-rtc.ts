@@ -357,9 +357,11 @@ module SocksToRtc {
     // TODO: Needs unit tests badly since it's mocked by several other tests.
     private doAuthHandshake_ = ()
         : Promise<void> => {
+      log.info("DO AUTH HANDSHAKE!");
       return this.tcpConnection_.receiveNext()
         .then(socks.interpretAuthHandshakeBuffer)
         .then((auths:socks.Auth[]) => {
+          log.info("sending auth response");
           this.tcpConnection_.send(
               socks.composeAuthResponse(socks.Auth.NOAUTH));
         });

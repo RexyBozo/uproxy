@@ -379,6 +379,7 @@ export class Connection {
 
   // Use the dataFromSocketQueue handler for data from the socket.
   private onData_ = (readInfo:freedom.TcpSocket.ReadInfo) : void => {
+    log.info("ONDATA!!");
     this.dataFromSocketQueue.handle(readInfo.data);
   }
 
@@ -388,6 +389,7 @@ export class Connection {
     return new Promise((F,R) => {
       log.info("in rn promise");
       log.info(F);
+      log.info(R);
       
       this.dataFromSocketQueue.setSyncNextHandler(F).catch(R);
 
